@@ -9,6 +9,7 @@ const server = express();
 // Middleware
 server.use(cors());
 server.use(express.json());
+server.use(express.urlencoded({ extended: true }));
 
 // Routes
 const { Category } = require('./Routes/Category.Routes');
