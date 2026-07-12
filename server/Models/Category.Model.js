@@ -5,7 +5,8 @@ const Schema = new mongoose.Schema(
           Name: {
                type: String,
                required: true,
-               trim: true
+               trim: true,
+               unique: true
           },
           Description: {
                type: String,

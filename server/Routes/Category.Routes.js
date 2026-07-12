@@ -1,6 +1,6 @@
 const express = require('express');
 const Category = express.Router();
-const { CategoryGET, CategoryPOST, CategoryPATCH, CategoryDELETE } = require('../Controllers/Category.Controller');
+const { CategoryGET, CategoryPOST, CategoryPUT, CategoryPATCH, CategoryDELETE } = require('../Controllers/Category.Controller');
 
 Category.get('/', CategoryGET);
 Category.post('/create', CategoryPOST);
