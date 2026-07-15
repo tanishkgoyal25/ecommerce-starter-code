@@ -3,42 +3,32 @@ const { Category } = require("../Models/Category.Model");
 
 const CategoryGET = async (request, response) => {
      try {
-          const { page = 1, limit = 10, search = "", status, sort = "createdAt", order = "desc" } = request.query;
+          const { Page, Limit, ID, Name, Status } = request.query;
 
-          const filter = {};
+          const Filter = {};
+          const Limiter = Math.min(Math.max(Number(Limit) || 10, 1), 25);
+          const CurrentPage = Math.max(Number(Page) || 1, 1);
+          const Skip = (CurrentPage - 1) * Limiter;
 
-          if (search) {
-               filter.Name = {
-                    $regex: search,
-                    $options: "i"
-               };
-          }
+          if (ID) Filter._id = ID;
+          if (Name) Filter.Name = { $regex: Name, $options: 'i' };
+          if (Status !== undefined) Filter.Status = Status === 'true';
 
-          if (status !== undefined) {
-               filter.Status = status === "true";
-          }
-
-          const skip = (Number(page) - 1) * Number(limit);
-
-          const [categories, total] = await Promise.all(
-               [
-                    Category.find(filter).sort({ [sort]: order === "asc" ? 1 : -1 }).skip(skip).limit(Number(limit)).lean(),
-
-                    Category.countDocuments(filter)
-               ]
-          );
+          const [Categories, Total] = await Promise.all([Category.find(Filter).sort({ createdAt: -1 }).skip(Skip).limit(Limiter).lean(), Category.countDocuments(Filter)])
 
           return response.status(200).json(
                {
                     Status: true,
-                    Total: total,
-                    CurrentPage: Number(page),
-                    TotalPages: Math.ceil(total / limit),
-                    Count: categories.length,
-                    Categories: categories
+                    Message: "Categories fetched successfully using GET request.",
+                    Total,
+                    Page: CurrentPage,
+                    Limit: Limiter,
+                    Categories
                }
           )
      } catch (error) {
+          console.error(error);
+
           return response.status(500).json(
                {
                     Status: false,
@@ -50,28 +40,24 @@ const CategoryGET = async (request, response) => {
 
 const CategoryPOST = async (request, response) => {
      try {
-          const Data = request.body;
+          const { Name, Description } = request.body;
 
-          const Existing = await Category.findOne({ Name: Data.Name });
-
-          if (Existing) {
-               return response.status(409).json(
+          if (!request.file) {
+               return response.status(400).json(
                     {
                          Status: false,
-                         Message: "Category name should be unique."
+                         Message: "Image is required."
                     }
-               );
+               )
           }
 
-          const category = new Category(
+          await Category.create(
                {
-                    Name: Data.Name,
-                    Description: Data.Description,
-                    Image: Data.Image
+                    Name,
+                    Description,
+                    Image: request.file.filename
                }
           );
-
-          await category.save();
 
           return response.status(201).json(
                {
@@ -80,6 +66,15 @@ const CategoryPOST = async (request, response) => {
                }
           );
      } catch (error) {
+          if (error.code === 11000) {
+               return response.status(409).json(
+                    {
+                         Status: false,
+                         Message: "Category already exists."
+                    }
+               );
+          }
+
           return response.status(500).json(
                {
                     Status: false,
@@ -165,9 +160,9 @@ const CategoryPATCH = async (request, response) => {
                );
           }
 
-          const category = await Category.findById(ID);
+          const Existing = await Category.findById(ID);
 
-          if (!category) {
+          if (!Existing) {
                return response.status(404).json(
                     {
                          Status: false,
@@ -176,7 +171,7 @@ const CategoryPATCH = async (request, response) => {
                );
           }
 
-          category.Status = !category.Status;
+          Existing.Status = !Existing.Status;
 
           await category.save();
 

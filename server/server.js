@@ -2,13 +2,15 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 const server = express();
 
 // Middleware
-server.use(cors({ origin: process.env.Client }));
+server.use(cors({ origin: process.env.Client, credentials: true }));
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
+server.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Routes
 const { Category } = require('./Routes/Category.Routes');
