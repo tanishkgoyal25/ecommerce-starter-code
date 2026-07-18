@@ -18,9 +18,18 @@ const Schema = new mongoose.Schema(
                required: true,
                trim: true
           },
+          ImageURL: {
+               type: String,
+               required: true,
+               trim: true
+          },
           Status: {
                type: Boolean,
                default: true
+          },
+          Home: {
+               type: Boolean,
+               default: false
           }
      },
      {

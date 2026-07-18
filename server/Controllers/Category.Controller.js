@@ -42,6 +42,24 @@ const CategoryPOST = async (request, response) => {
      try {
           const { Name, Description } = request.body;
 
+          if (!Name) {
+               return response.status(400).json(
+                    {
+                         Status: false,
+                         Message: "Name is required."
+                    }
+               )
+          }
+
+          if (!Description) {
+               return response.status(400).json(
+                    {
+                         Status: false,
+                         Message: "Description is required.",
+                    }
+               )
+          }
+
           if (!request.file) {
                return response.status(400).json(
                     {
@@ -55,7 +73,8 @@ const CategoryPOST = async (request, response) => {
                {
                     Name,
                     Description,
-                    Image: request.file.filename
+                    Image: request.file.filename,
+                    ImageURL: `${process.env.Server}/category/${request.file.filename}`
                }
           );
 
@@ -78,8 +97,7 @@ const CategoryPOST = async (request, response) => {
           return response.status(500).json(
                {
                     Status: false,
-                    Message: "Category cannot be created.",
-                    Error: error.message
+                    Message: "Category cannot be created."
                }
           );
      }
@@ -88,7 +106,7 @@ const CategoryPOST = async (request, response) => {
 const CategoryPUT = async (request, response) => {
      try {
           const ID = request.params.id;
-          const Data = request.body;
+          const { Name, Description } = request.body;
 
           if (!mongoose.Types.ObjectId.isValid(ID)) {
                return response.status(400).json(
@@ -99,23 +117,23 @@ const CategoryPUT = async (request, response) => {
                );
           }
 
-          if (Data.Name) {
-               const Existing = await Category.findOne({ Name: Data.Name, _id: { $ne: ID } });
+          if (Name) {
+               const Existing = await Category.findOne({ Name, _id: { $ne: ID } });
 
                if (Existing) {
                     return response.status(409).json(
                          {
                               Status: false,
-                              Message: "Another category with this name already exists."
+                              Message: "Category with this name already exists."
                          }
                     );
                }
           }
 
           let UpdatedData = {
-               Name: Data.Name,
-               Description: Data.Description,
-               Image: Data.Image
+               Name,
+               Description,
+               Image: request.file
           };
 
           const UpdatedCategory = await Category.findByIdAndUpdate(ID, UpdatedData, { returnDocument: "after", runValidators: true });
@@ -138,6 +156,8 @@ const CategoryPUT = async (request, response) => {
           );
 
      } catch (error) {
+          console.error(error);
+
           return response.status(500).json(
                {
                     Status: false,
@@ -183,6 +203,8 @@ const CategoryPATCH = async (request, response) => {
                }
           )
      } catch (error) {
+          console.error(error);
+
           return response.status(500).json(
                {
                     Status: false,

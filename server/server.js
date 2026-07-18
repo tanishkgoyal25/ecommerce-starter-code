@@ -10,7 +10,7 @@ const server = express();
 server.use(cors({ origin: process.env.Client, credentials: true }));
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
-server.use('/public', express.static(path.join(__dirname, 'public')));
+server.use('/', express.static(path.join(__dirname, 'Public')));
 
 // Routes
 const { Category } = require('./Routes/Category.Routes');
