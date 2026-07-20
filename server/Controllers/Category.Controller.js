@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { Category } = require("../Models/Category.Model");
+const { Delete } = require("../Services/File.Service");
 
 const CategoryGET = async (request, response) => {
      try {
@@ -10,8 +11,21 @@ const CategoryGET = async (request, response) => {
           const CurrentPage = Math.max(Number(Page) || 1, 1);
           const Skip = (CurrentPage - 1) * Limiter;
 
-          if (ID) Filter._id = ID;
+          if (ID) {
+               if (!mongoose.Types.ObjectId.isValid(ID)) {
+                    return response.status(400).json(
+                         {
+                              Status: false,
+                              Message: "Invalid category ID."
+                         }
+                    );
+               }
+
+               Filter._id = ID;
+          }
+
           if (Name) Filter.Name = { $regex: Name, $options: 'i' };
+
           if (Status !== undefined) Filter.Status = Status === 'true';
 
           const [Categories, Total] = await Promise.all([Category.find(Filter).sort({ createdAt: -1 }).skip(Skip).limit(Limiter).lean(), Category.countDocuments(Filter)])
@@ -32,7 +46,7 @@ const CategoryGET = async (request, response) => {
           return response.status(500).json(
                {
                     Status: false,
-                    Message: "Internal Server Error."
+                    Message: "Categories cannot be fetched using a GET request"
                }
           )
      }
@@ -55,7 +69,7 @@ const CategoryPOST = async (request, response) => {
                return response.status(400).json(
                     {
                          Status: false,
-                         Message: "Description is required.",
+                         Message: "Description is required."
                     }
                )
           }
@@ -85,6 +99,8 @@ const CategoryPOST = async (request, response) => {
                }
           );
      } catch (error) {
+          console.error(error);
+
           if (error.code === 11000) {
                return response.status(409).json(
                     {
@@ -199,7 +215,7 @@ const CategoryPATCH = async (request, response) => {
                {
                     Status: true,
                     Message: "Status updated successfully.",
-                    Data: category
+                    Data: Existing
                }
           )
      } catch (error) {
@@ -227,9 +243,9 @@ const CategoryDELETE = async (request, response) => {
                );
           }
 
-          const category = await Category.findByIdAndDelete(ID);
+          const DeletedCategory = await Category.findByIdAndDelete(ID);
 
-          if (!category) {
+          if (!DeletedCategory) {
                return response.status(404).json(
                     {
                          Status: false,
@@ -238,13 +254,18 @@ const CategoryDELETE = async (request, response) => {
                )
           }
 
+          Delete("category", DeletedCategory.Image);
+
           return response.status(200).json(
                {
                     Status: true,
-                    Message: "Category deleted successfully."
+                    Message: "Category deleted successfully.",
+                    Data: DeletedCategory
                }
           )
      } catch (error) {
+          console.error(error);
+
           return response.status(500).json(
                {
                     Status: false,

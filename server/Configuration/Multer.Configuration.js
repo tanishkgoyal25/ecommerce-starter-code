@@ -22,12 +22,4 @@ const Storage = (Folder) => {
      );
 };
 
-const Upload = (Folder) => {
-     return multer(
-          {
-               storage: Storage(Folder)
-          }
-     );
-};
-
-module.exports = { Upload };
+module.exports = { Storage };

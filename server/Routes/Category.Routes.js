@@ -1,7 +1,7 @@
 const express = require('express');
 const Category = express.Router();
 const { CategoryGET, CategoryPOST, CategoryPUT, CategoryPATCH, CategoryDELETE } = require('../Controllers/Category.Controller');
-const { Upload } = require('../Configuration/Multer');
+const { Upload } = require('../Middleware/Upload.Middleware');
 
 Category.get('/', CategoryGET);
 Category.post('/create', Upload('category').single('Image'), CategoryPOST);

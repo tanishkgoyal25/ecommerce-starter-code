@@ -10,11 +10,11 @@ const server = express();
 server.use(cors({ origin: process.env.Client, credentials: true }));
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
-server.use('/', express.static(path.join(__dirname, 'Public')));
+server.use('/', express.static(path.join(__dirname, 'public')));
 
 // Routes
 const { Category } = require('./Routes/Category.Routes');
-const { Database } = require('./Configuration/Database');
+const { Database } = require('./Configuration/Database.Configuration');
 
 server.use('/api/category', Category);
 
