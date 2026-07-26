@@ -2,9 +2,7 @@ const path = require("path");
 const fs = require("fs/promises");
 
 const Delete = async (Folder, Image) => {
-     if (!Image) return false;
-
-     const File = path.join(__dirname, `../public/${Folder}/${Image}`);
+     const File = path.join(__dirname, '..', 'public', Folder, Image);
 
      try {
           await fs.unlink(File);

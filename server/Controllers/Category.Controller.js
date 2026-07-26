@@ -56,7 +56,11 @@ const CategoryPOST = async (request, response) => {
      try {
           const { Name, Description } = request.body;
 
-          if (!Name) {
+          if (!Name?.trim()) {
+               if (request.file) {
+                    await Delete("category", request.file.filename);
+               }
+
                return response.status(400).json(
                     {
                          Status: false,
@@ -65,7 +69,11 @@ const CategoryPOST = async (request, response) => {
                )
           }
 
-          if (!Description) {
+          if (!Description?.trim()) {
+               if (request.file) {
+                    await Delete("category", request.file.filename);
+               }
+
                return response.status(400).json(
                     {
                          Status: false,
@@ -85,8 +93,8 @@ const CategoryPOST = async (request, response) => {
 
           await Category.create(
                {
-                    Name,
-                    Description,
+                    Name: Name.trim(),
+                    Description: Description.trim(),
                     Image: request.file.filename,
                     ImageURL: `${process.env.Server}/category/${request.file.filename}`
                }
@@ -99,6 +107,14 @@ const CategoryPOST = async (request, response) => {
                }
           );
      } catch (error) {
+          if (request.file) {
+               try {
+                    await Delete("category", request.file.filename);
+               } catch (error) {
+                    console.error(error);
+               }
+          }
+
           console.error(error);
 
           if (error.code === 11000) {

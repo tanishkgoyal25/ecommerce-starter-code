@@ -1,9 +1,10 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto')
 
 const Storage = (Folder) => {
-     const Destination = path.join(__dirname, `../public/${Folder}`);
+     const Destination = path.join(__dirname, "..", "public", Folder);
 
      if (!fs.existsSync(Destination)) {
           fs.mkdirSync(Destination, { recursive: true });
@@ -16,7 +17,8 @@ const Storage = (Folder) => {
                },
 
                filename: (Request, File, Callback) => {
-                    Callback(null, File.originalname)
+                    const Extension = path.extname(File.originalname);
+                    Callback(null, crypto.randomUUID() + Extension)
                }
           }
      );

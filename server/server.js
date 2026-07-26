@@ -14,9 +14,11 @@ server.use('/', express.static(path.join(__dirname, 'public')));
 
 // Routes
 const { Category } = require('./Routes/Category.Routes');
+const { Error } = require('./Middleware/Error.Middleware');
 const { Database } = require('./Configuration/Database.Configuration');
 
 server.use('/api/category', Category);
+server.use(Error);
 
 const Server = async () => {
      try {
