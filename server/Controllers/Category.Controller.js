@@ -1,10 +1,9 @@
-const mongoose = require("mongoose");
 const { Category } = require("../Models/Category.Model");
 const { Delete } = require("../Services/File.Service");
 
 const CategoryGET = async (request, response) => {
      try {
-          const { Page, Limit, ID, Name, Status } = request.query;
+          const { Page, Limit, ID, Name, Status, Home, Featured } = request.query;
 
           const Filter = {};
           const Limiter = Math.min(Math.max(Number(Limit) || 10, 1), 25);
@@ -12,21 +11,16 @@ const CategoryGET = async (request, response) => {
           const Skip = (CurrentPage - 1) * Limiter;
 
           if (ID) {
-               if (!mongoose.Types.ObjectId.isValid(ID)) {
-                    return response.status(400).json(
-                         {
-                              Status: false,
-                              Message: "Invalid category ID."
-                         }
-                    );
-               }
-
                Filter._id = ID;
           }
 
           if (Name) Filter.Name = { $regex: Name, $options: 'i' };
 
           if (Status !== undefined) Filter.Status = Status === 'true';
+
+          if (Home !== undefined) Filter.Home = Home === 'true';
+
+          if (Featured !== undefined) Filter.Featured = Featured === 'true';
 
           const [Categories, Total] = await Promise.all([Category.find(Filter).sort({ createdAt: -1 }).skip(Skip).limit(Limiter).lean(), Category.countDocuments(Filter)])
 
@@ -95,8 +89,7 @@ const CategoryPOST = async (request, response) => {
                {
                     Name: Name.trim(),
                     Description: Description.trim(),
-                    Image: request.file.filename,
-                    ImageURL: `${process.env.Server}/category/${request.file.filename}`
+                    Image: request.file.filename
                }
           );
 
@@ -139,15 +132,6 @@ const CategoryPUT = async (request, response) => {
      try {
           const ID = request.params.id;
           const { Name, Description } = request.body;
-
-          if (!mongoose.Types.ObjectId.isValid(ID)) {
-               return response.status(400).json(
-                    {
-                         Status: false,
-                         Message: "Invalid category ID."
-                    }
-               );
-          }
 
           if (Name) {
                const Existing = await Category.findOne({ Name, _id: { $ne: ID } });
@@ -203,15 +187,6 @@ const CategoryPATCH = async (request, response) => {
      try {
           const ID = request.params.id;
 
-          if (!mongoose.Types.ObjectId.isValid(ID)) {
-               return response.status(400).json(
-                    {
-                         Status: false,
-                         Message: "Invalid category ID."
-                    }
-               );
-          }
-
           const Existing = await Category.findById(ID);
 
           if (!Existing) {
@@ -249,15 +224,6 @@ const CategoryPATCH = async (request, response) => {
 const CategoryDELETE = async (request, response) => {
      try {
           const ID = request.params.id;
-
-          if (!mongoose.Types.ObjectId.isValid(ID)) {
-               return response.status(400).json(
-                    {
-                         Status: false,
-                         Message: "Invalid category ID."
-                    }
-               );
-          }
 
           const DeletedCategory = await Category.findByIdAndDelete(ID);
 

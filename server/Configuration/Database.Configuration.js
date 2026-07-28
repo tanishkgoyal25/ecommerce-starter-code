@@ -11,7 +11,7 @@ const Database = async () => {
 
           console.log("Connected to database.");
      } catch (error) {
-          console.log(`Unable to connect to database due to ${error.message}`);
+          console.error(`Unable to connect to database due to ${error.message}`);
           process.exit(1);
      }
 }

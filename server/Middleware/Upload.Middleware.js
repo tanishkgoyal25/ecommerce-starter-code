@@ -1,22 +1,16 @@
 const multer = require("multer");
-const path = require("path");
 const { Storage } = require("../Configuration/Multer.Configuration");
 
 const Upload = (Folder) => {
      return multer(
           {
                fileFilter: (Request, File, Callback) => {
-                    const AllowedTypes = /jpeg|jpg|png|webp/;
-                    const Extension = AllowedTypes.test(
-                         path.extname(File.originalname).toLowerCase()
-                    );
+                    const AllowedTypes = ['image/jpeg', 'image/png', 'image/svg+xml', 'image/webp'];
 
-                    const MimeType = AllowedTypes.test(File.mimetype);
-
-                    if (Extension && MimeType) {
+                    if (AllowedTypes.includes(File.mimetype)) {
                          Callback(null, true);
                     } else {
-                         Callback(new Error("Only image files are allowed"));
+                         Callback(new Error("Only JPEG, PNG, WebP, and SVG images are allowed."));
                     }
                },
 

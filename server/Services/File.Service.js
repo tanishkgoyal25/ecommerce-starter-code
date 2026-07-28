@@ -8,10 +8,10 @@ const Delete = async (Folder, Image) => {
           await fs.unlink(File);
           return true;
      } catch (error) {
-          if (error.code === "ENOENT") {
-               return false;
+          if (error.code !== 'ENOENT') {
+               console.error(`Failed to delete file: ${File}`, error.message);
           }
-          throw error;
+          return false;
      }
 };
 
