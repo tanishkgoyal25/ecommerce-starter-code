@@ -133,24 +133,68 @@ const CategoryPUT = async (request, response) => {
           const ID = request.params.id;
           const { Name, Description } = request.body;
 
-          if (Name) {
-               const Existing = await Category.findOne({ Name, _id: { $ne: ID } });
+          const ExistingCategory = await Category.findById(ID);
 
-               if (Existing) {
+          if (!ExistingCategory) {
+               if (request.file) {
+                    try {
+                         await Delete("category", request.file.filename);
+                    } catch (error) {
+                         console.error(error);
+                    }
+               }
+
+               return response.status(404).json(
+                    {
+                         Status: false,
+                         Message: "Category does not exist."
+                    }
+               )
+          }
+
+          if (Name?.trim()) {
+               const Duplicate = await Category.findOne({ Name: Name.trim(), _id: { $ne: ID } });
+
+               if (Duplicate) {
+                    if (request.file) {
+                         try {
+                              await Delete("category", request.file.filename);
+                         } catch (error) {
+                              console.error(error);
+                         }
+                    }
+
                     return response.status(409).json(
                          {
                               Status: false,
-                              Message: "Category with this name already exists."
+                              Message: "Category already exists."
                          }
                     );
                }
           }
 
-          let UpdatedData = {
-               Name,
-               Description,
-               Image: request.file
-          };
+          const UpdatedData = {}
+
+          if (Name?.trim()) {
+               UpdatedData.Name = Name.trim();
+          }
+
+          if (Description?.trim()) {
+               UpdatedData.Description = Description.trim();
+          }
+
+          if (request.file) {
+               UpdatedData.Image = request.file.filename;
+          }
+
+          if (Object.keys(UpdatedData).length === 0) {
+               return response.status(400).json(
+                    {
+                         Status: false,
+                         Message: "No fields provided to update."
+                    }
+               );
+          }
 
           const UpdatedCategory = await Category.findByIdAndUpdate(ID, UpdatedData, { returnDocument: "after", runValidators: true });
 
@@ -158,9 +202,13 @@ const CategoryPUT = async (request, response) => {
                return response.status(404).json(
                     {
                          Status: false,
-                         Message: "Category cannot be updated."
+                         Message: "Category does not exist."
                     }
                );
+          }
+
+          if (request.file && ExistingCategory.Image && ExistingCategory.Image !== request.file.filename) {
+               await Delete("category", ExistingCategory.Image);
           }
 
           return response.status(200).json(
@@ -170,9 +218,25 @@ const CategoryPUT = async (request, response) => {
                     Data: UpdatedCategory
                }
           );
-
      } catch (error) {
+          if (request.file) {
+               try {
+                    await Delete("category", request.file.filename);
+               } catch (error) {
+                    console.error(error);
+               }
+          }
+
           console.error(error);
+
+          if (error.code === 11000) {
+               return response.status(409).json(
+                    {
+                         Status: false,
+                         Message: "Category already exists."
+                    }
+               );
+          }
 
           return response.status(500).json(
                {
@@ -200,7 +264,7 @@ const CategoryPATCH = async (request, response) => {
 
           Existing.Status = !Existing.Status;
 
-          await category.save();
+          await Existing.save();
 
           return response.status(200).json(
                {
@@ -225,9 +289,9 @@ const CategoryDELETE = async (request, response) => {
      try {
           const ID = request.params.id;
 
-          const DeletedCategory = await Category.findByIdAndDelete(ID);
+          const ExistingCategory = await Category.findByIdAndDelete(ID);
 
-          if (!DeletedCategory) {
+          if (!ExistingCategory) {
                return response.status(404).json(
                     {
                          Status: false,
@@ -236,13 +300,15 @@ const CategoryDELETE = async (request, response) => {
                )
           }
 
-          Delete("category", DeletedCategory.Image);
+          if (ExistingCategory.Image) {
+               await Delete("category", ExistingCategory.Image);
+          }
 
           return response.status(200).json(
                {
                     Status: true,
                     Message: "Category deleted successfully.",
-                    Data: DeletedCategory
+                    Data: ExistingCategory
                }
           )
      } catch (error) {

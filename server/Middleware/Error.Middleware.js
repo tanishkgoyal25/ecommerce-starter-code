@@ -10,7 +10,24 @@ const Error = (error, request, response, next) => {
                     }
                );
           }
+
+          return response.status(400).json(
+               {
+                    Status: false,
+                    Message: error.message
+               }
+          )
      }
+
+     if (error.isUploadError) {
+          return response.status(400).json(
+               {
+                    Status: false,
+                    Message: error.message
+               }
+          );
+     }
+
 
      return response.status(500).json(
           {
