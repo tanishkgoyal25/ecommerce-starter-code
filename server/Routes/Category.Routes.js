@@ -5,9 +5,9 @@ const { Upload } = require('../Middleware/Upload.Middleware');
 const { ValidID } = require('../Middleware/Validator.Middleware');
 
 Category.get('/', ValidID(), CategoryGET);
-Category.post('/create', Upload('category').single('Image'), CategoryPOST);
-Category.put('/update/:id', ValidID(), Upload('category').single('Image'), CategoryPUT);
-Category.patch('/update/:id', ValidID(), CategoryPATCH);
-Category.delete('/delete/:id', ValidID(), CategoryDELETE);
+Category.post('/', Upload('category').single('Image'), CategoryPOST);
+Category.put('/:id', ValidID(), Upload('category').single('Image'), CategoryPUT);
+Category.patch('/:id/:field', ValidID(), CategoryPATCH);
+Category.delete('/:id', ValidID(), CategoryDELETE);
 
 module.exports = { Category };

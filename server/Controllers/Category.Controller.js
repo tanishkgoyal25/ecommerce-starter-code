@@ -24,12 +24,15 @@ const CategoryGET = async (request, response) => {
 
           const [Categories, Total] = await Promise.all([Category.find(Filter).sort({ createdAt: -1 }).skip(Skip).limit(Limiter).lean(), Category.countDocuments(Filter)])
 
+          const Pages = Math.ceil(Total / Limiter);
+
           return response.status(200).json(
                {
                     Status: true,
                     Message: "Categories fetched successfully using GET request.",
                     Total,
                     Page: CurrentPage,
+                    Pages,
                     Limit: Limiter,
                     Categories
                }
@@ -152,27 +155,6 @@ const CategoryPUT = async (request, response) => {
                )
           }
 
-          if (Name?.trim()) {
-               const Duplicate = await Category.findOne({ Name: Name.trim(), _id: { $ne: ID } });
-
-               if (Duplicate) {
-                    if (request.file) {
-                         try {
-                              await Delete("category", request.file.filename);
-                         } catch (error) {
-                              console.error(error);
-                         }
-                    }
-
-                    return response.status(409).json(
-                         {
-                              Status: false,
-                              Message: "Category already exists."
-                         }
-                    );
-               }
-          }
-
           const UpdatedData = {}
 
           if (Name?.trim()) {
@@ -188,6 +170,10 @@ const CategoryPUT = async (request, response) => {
           }
 
           if (Object.keys(UpdatedData).length === 0) {
+               if (request.file) {
+                    await Delete("category", request.file.filename);
+               }
+
                return response.status(400).json(
                     {
                          Status: false,
@@ -250,6 +236,18 @@ const CategoryPUT = async (request, response) => {
 const CategoryPATCH = async (request, response) => {
      try {
           const ID = request.params.id;
+          const Field = request.params.field;
+
+          const Fields = ["Status", "Home", "Featured"];
+
+          if (!Fields.includes(Field)) {
+               return response.status(400).json(
+                    {
+                         Status: false,
+                         Message: "Invalid field."
+                    }
+               );
+          }
 
           const Existing = await Category.findById(ID);
 
@@ -262,14 +260,14 @@ const CategoryPATCH = async (request, response) => {
                );
           }
 
-          Existing.Status = !Existing.Status;
+          Existing[Field] = !Existing[Field];
 
           await Existing.save();
 
           return response.status(200).json(
                {
                     Status: true,
-                    Message: "Status updated successfully.",
+                    Message: `${Field} updated successfully.`,
                     Data: Existing
                }
           )

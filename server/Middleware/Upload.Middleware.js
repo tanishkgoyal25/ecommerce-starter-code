@@ -5,12 +5,12 @@ const Upload = (Folder) => {
      return multer(
           {
                fileFilter: (Request, File, Callback) => {
-                    const AllowedTypes = Object.freeze(['image/jpeg', 'image/png', 'image/svg+xml', 'image/webp']);
+                    const AllowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
 
                     if (AllowedTypes.includes(File.mimetype)) {
                          Callback(null, true);
                     } else {
-                         Callback(new Error("Only JPEG, PNG, WebP, and SVG images are allowed."));
+                         Callback(new Error("Only JPEG, PNG, WebP images are allowed."));
                     }
                },
 

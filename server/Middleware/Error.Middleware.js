@@ -19,7 +19,27 @@ const Error = (error, request, response, next) => {
           )
      }
 
-     if (error.isUploadError) {
+     if (error.name === 'CastError') {
+          return response.status(400).json(
+               {
+                    Status: false,
+                    Message: `Invalid value for ${error.path}.`
+               }
+          );
+     }
+
+     if (error.name === 'ValidationError') {
+          const Messages = Object.values(error.errors).map((e) => e.message);
+
+          return response.status(400).json(
+               {
+                    Status: false,
+                    Message: Messages.join(', ')
+               }
+          );
+     }
+
+     if (error.message) {
           return response.status(400).json(
                {
                     Status: false,
@@ -28,11 +48,10 @@ const Error = (error, request, response, next) => {
           );
      }
 
-
      return response.status(500).json(
           {
                Status: false,
-               Message: error.message
+               Message: "Internal Server Error"
           }
      );
 }

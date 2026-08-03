@@ -18,6 +18,12 @@ const { Error } = require('./Middleware/Error.Middleware');
 const { Database } = require('./Configuration/Database.Configuration');
 
 server.use('/api/category', Category);
+server.use((request, response) => {
+     response.status(404).json({
+          Status: false,
+          Message: `Route not found: ${request.originalUrl}`
+     });
+});
 server.use(Error);
 
 const Server = async () => {
