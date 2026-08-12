@@ -4,18 +4,19 @@ const Schema = new mongoose.Schema(
      {
           Name: {
                type: String,
-               required: true,
                trim: true,
+               required: true,
                unique: true
           },
           HEXCode: {
                type: String,
+               trim: true,
                required: true,
-               trim: true
+               unique: true
           },
           Status: {
                type: Boolean,
-               default: false
+               default: true
           }
      },
      {
