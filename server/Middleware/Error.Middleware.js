@@ -19,6 +19,15 @@ const Error = (error, request, response, next) => {
           )
      }
 
+     if (error.name === "FileMimeTypeError") {
+          return response.status(400).json(
+               {
+                    Status: false,
+                    Message: error.message
+               }
+          )
+     }
+
      if (error.name === 'CastError') {
           return response.status(400).json(
                {
@@ -29,7 +38,7 @@ const Error = (error, request, response, next) => {
      }
 
      if (error.name === 'ValidationError') {
-          const Messages = Object.values(error.errors).map((e) => e.message);
+          const Messages = Object.values(error.errors).map((event) => event.message);
 
           return response.status(400).json(
                {
@@ -39,14 +48,7 @@ const Error = (error, request, response, next) => {
           );
      }
 
-     if (error.message) {
-          return response.status(400).json(
-               {
-                    Status: false,
-                    Message: error.message
-               }
-          );
-     }
+     console.error(`Internal Server Error: ${error.message}`);
 
      return response.status(500).json(
           {

@@ -84,7 +84,7 @@ const ColorPOST = async (request, response) => {
                return response.status(409).json(
                     {
                          Status: false,
-                         Message: "Color already exist."
+                         Message: "Color already exists."
                     }
                )
           }
@@ -158,7 +158,7 @@ const ColorPUT = async (request, response) => {
                return response.status(409).json(
                     {
                          Status: false,
-                         Message: "Color already exist."
+                         Message: "Color already exists."
                     }
                )
           }
@@ -177,22 +177,11 @@ const ColorPUT = async (request, response) => {
 const ColorPATCH = async (request, response) => {
      try {
           const ID = request.params.id;
-          const Field = request.params.field;
+          const { Status } = request.body;
 
-          const Fields = ["Status"];
+          const ExistingColor = await Color.findById(ID);
 
-          if (!Fields.includes(Field)) {
-               return response.status(400).json(
-                    {
-                         Status: false,
-                         Message: "Invalid field."
-                    }
-               )
-          }
-
-          const Existing = await Color.findById(ID);
-
-          if (!Existing) {
+          if (!ExistingColor) {
                return response.status(404).json(
                     {
                          Status: false,
@@ -201,17 +190,39 @@ const ColorPATCH = async (request, response) => {
                );
           }
 
-          Existing[Field] = !Existing[Field];
+          const Data = {};
 
-          await Existing.save();
+          if (Status !== undefined) {
+               if (typeof Status !== 'boolean') {
+                    return response.status(400).json(
+                         {
+                              Status: false,
+                              Message: "Status must be a boolean."
+                         }
+                    );
+               }
+
+               Data.Status = Status;
+          }
+
+          if (Object.keys(Data).length === 0) {
+               return response.status(400).json(
+                    {
+                         Status: false,
+                         Message: "No fields provided to update."
+                    }
+               );
+          }
+
+          const UpdatedColor = await Color.findByIdAndUpdate(ID, Data, { returnDocument: "after", runValidators: true });
 
           return response.status(200).json(
                {
                     Status: true,
-                    Message: `${Field} updated successfully.`,
-                    Data: Existing
+                    Message: "Color updated successfully.",
+                    Data: UpdatedColor
                }
-          )
+          );
      } catch (error) {
           console.error(error);
 
@@ -220,7 +231,7 @@ const ColorPATCH = async (request, response) => {
                     Status: false,
                     Message: "Internal Server Error"
                }
-          )
+          );
      }
 }
 

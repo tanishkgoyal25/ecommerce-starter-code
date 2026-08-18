@@ -10,7 +10,9 @@ const Upload = (Folder) => {
                     if (AllowedTypes.includes(File.mimetype)) {
                          Callback(null, true);
                     } else {
-                         Callback(new Error("Only JPEG, PNG, WebP images are allowed."));
+                         const error = new Error("Only JPEG, PNG, and WebP images are allowed.");
+                         error.name = "FileMimeTypeError";
+                         Callback(error)
                     }
                },
 

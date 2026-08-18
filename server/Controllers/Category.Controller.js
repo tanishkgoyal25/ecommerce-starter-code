@@ -43,7 +43,7 @@ const CategoryGET = async (request, response) => {
           return response.status(500).json(
                {
                     Status: false,
-                    Message: "Categories cannot be fetched using a GET request"
+                    Message: "Internal Server Error"
                }
           )
      }
@@ -125,7 +125,7 @@ const CategoryPOST = async (request, response) => {
           return response.status(500).json(
                {
                     Status: false,
-                    Message: "Category cannot be created."
+                    Message: "Internal Server Error"
                }
           );
      }
@@ -236,22 +236,11 @@ const CategoryPUT = async (request, response) => {
 const CategoryPATCH = async (request, response) => {
      try {
           const ID = request.params.id;
-          const Field = request.params.field;
+          const { Status, Home, Featured } = request.body;
 
-          const Fields = ["Status", "Home", "Featured"];
+          const ExistingCategory = await Category.findById(ID);
 
-          if (!Fields.includes(Field)) {
-               return response.status(400).json(
-                    {
-                         Status: false,
-                         Message: "Invalid field."
-                    }
-               );
-          }
-
-          const Existing = await Category.findById(ID);
-
-          if (!Existing) {
+          if (!ExistingCategory) {
                return response.status(404).json(
                     {
                          Status: false,
@@ -260,17 +249,65 @@ const CategoryPATCH = async (request, response) => {
                );
           }
 
-          Existing[Field] = !Existing[Field];
+          const UpdatedData = {};
 
-          await Existing.save();
+          if (Status !== undefined) {
+               if (typeof Status !== 'boolean') {
+                    return response.status(400).json(
+                         {
+                              Status: false,
+                              Message: "Status must be a boolean."
+                         }
+                    );
+               }
+
+               UpdatedData.Status = Status;
+          }
+
+          if (Home !== undefined) {
+               if (typeof Home !== 'boolean') {
+                    return response.status(400).json(
+                         {
+                              Status: false,
+                              Message: "Home must be a boolean."
+                         }
+                    );
+               }
+
+               UpdatedData.Home = Home;
+          }
+
+          if (Featured !== undefined) {
+               if (typeof Featured !== 'boolean') {
+                    return response.status(400).json(
+                         {
+                              Status: false,
+                              Message: "Featured must be a boolean."
+                         }
+                    );
+               }
+
+               UpdatedData.Featured = Featured;
+          }
+
+          if (Object.keys(UpdatedData).length === 0) {
+               return response.status(400).json(
+                    {
+                         Status: false,
+                         Message: "No fields provided to update."
+                    }
+               );
+          }
+
+          const UpdatedCategory = await Category.findByIdAndUpdate(ID, UpdatedData, { returnDocument: "after", runValidators: true });
 
           return response.status(200).json(
                {
                     Status: true,
-                    Message: `${Field} updated successfully.`,
-                    Data: Existing
+                    Message: "Category updated successfully.",
+                    Data: UpdatedCategory
                }
-          )
+          );
      } catch (error) {
           console.error(error);
 
@@ -279,7 +316,7 @@ const CategoryPATCH = async (request, response) => {
                     Status: false,
                     Message: "Internal Server Error"
                }
-          )
+          );
      }
 }
 
@@ -315,7 +352,7 @@ const CategoryDELETE = async (request, response) => {
           return response.status(500).json(
                {
                     Status: false,
-                    Message: "Category cannot be deleted."
+                    Message: "Internal Server Error"
                }
           )
      }
