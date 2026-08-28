@@ -1,6 +1,6 @@
 const { Color } = require('../Models/Color.Model');
 
-const ColorGET = async (request, response) => {
+const ColorGET = async (request, response, next) => {
      try {
           const { ID, Name, HEXCode, Status, Page, Limit } = request.query;
 
@@ -33,18 +33,11 @@ const ColorGET = async (request, response) => {
                }
           )
      } catch (error) {
-          console.error(error);
-
-          return response.status(500).json(
-               {
-                    Status: false,
-                    Message: "Internal Server Error"
-               }
-          )
+          next(error);
      }
 }
 
-const ColorPOST = async (request, response) => {
+const ColorPOST = async (request, response, next) => {
      try {
           const { Name, HEXCode } = request.body;
 
@@ -80,27 +73,11 @@ const ColorPOST = async (request, response) => {
                }
           )
      } catch (error) {
-          if (error.code === 11000) {
-               return response.status(409).json(
-                    {
-                         Status: false,
-                         Message: "Color already exists."
-                    }
-               )
-          }
-
-          console.error(error);
-
-          return response.status(500).json(
-               {
-                    Status: false,
-                    Message: "Internal Server Error"
-               }
-          )
+          next(error);
      }
 }
 
-const ColorPUT = async (request, response) => {
+const ColorPUT = async (request, response, next) => {
      try {
           const ID = request.params.id;
           const { Name, HEXCode } = request.body;
@@ -154,27 +131,11 @@ const ColorPUT = async (request, response) => {
                }
           )
      } catch (error) {
-          if (error.code === 11000) {
-               return response.status(409).json(
-                    {
-                         Status: false,
-                         Message: "Color already exists."
-                    }
-               )
-          }
-
-          console.error(error);
-
-          return response.status(500).json(
-               {
-                    Status: false,
-                    Message: "Internal Server Error"
-               }
-          )
+          next(error);
      }
 }
 
-const ColorPATCH = async (request, response) => {
+const ColorPATCH = async (request, response, next) => {
      try {
           const ID = request.params.id;
           const { Status } = request.body;
@@ -224,18 +185,11 @@ const ColorPATCH = async (request, response) => {
                }
           );
      } catch (error) {
-          console.error(error);
-
-          return response.status(500).json(
-               {
-                    Status: false,
-                    Message: "Internal Server Error"
-               }
-          );
+          next(error);
      }
 }
 
-const ColorDELETE = async (request, response) => {
+const ColorDELETE = async (request, response, next) => {
      try {
           const ID = request.params.id;
 
@@ -258,14 +212,7 @@ const ColorDELETE = async (request, response) => {
                }
           )
      } catch (error) {
-          console.error(error);
-
-          return response.status(500).json(
-               {
-                    Status: false,
-                    Message: "Internal Server Error"
-               }
-          )
+          next(error);
      }
 }
 

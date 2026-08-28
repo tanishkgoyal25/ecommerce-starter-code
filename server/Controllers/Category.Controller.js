@@ -1,7 +1,7 @@
 const { Category } = require("../Models/Category.Model");
 const { Delete } = require("../Services/File.Service");
 
-const CategoryGET = async (request, response) => {
+const CategoryGET = async (request, response, next) => {
      try {
           const { Page, Limit, ID, Name, Status, Home, Featured } = request.query;
 
@@ -10,9 +10,7 @@ const CategoryGET = async (request, response) => {
           const CurrentPage = Math.max(Number(Page) || 1, 1);
           const Skip = (CurrentPage - 1) * Limiter;
 
-          if (ID) {
-               Filter._id = ID;
-          }
+          if (ID) Filter._id = ID;
 
           if (Name) Filter.Name = { $regex: Name, $options: 'i' };
 
@@ -38,18 +36,11 @@ const CategoryGET = async (request, response) => {
                }
           )
      } catch (error) {
-          console.error(error);
-
-          return response.status(500).json(
-               {
-                    Status: false,
-                    Message: "Internal Server Error"
-               }
-          )
+          next(error);
      }
 }
 
-const CategoryPOST = async (request, response) => {
+const CategoryPOST = async (request, response, next) => {
      try {
           const { Name, Description } = request.body;
 
@@ -104,34 +95,14 @@ const CategoryPOST = async (request, response) => {
           );
      } catch (error) {
           if (request.file) {
-               try {
-                    await Delete("category", request.file.filename);
-               } catch (error) {
-                    console.error(error);
-               }
+               await Delete("category", request.file.filename);
           }
 
-          console.error(error);
-
-          if (error.code === 11000) {
-               return response.status(409).json(
-                    {
-                         Status: false,
-                         Message: "Category already exists."
-                    }
-               );
-          }
-
-          return response.status(500).json(
-               {
-                    Status: false,
-                    Message: "Internal Server Error"
-               }
-          );
+          next(error);
      }
 }
 
-const CategoryPUT = async (request, response) => {
+const CategoryPUT = async (request, response, next) => {
      try {
           const ID = request.params.id;
           const { Name, Description } = request.body;
@@ -140,11 +111,7 @@ const CategoryPUT = async (request, response) => {
 
           if (!ExistingCategory) {
                if (request.file) {
-                    try {
-                         await Delete("category", request.file.filename);
-                    } catch (error) {
-                         console.error(error);
-                    }
+                    await Delete("category", request.file.filename);
                }
 
                return response.status(404).json(
@@ -206,34 +173,14 @@ const CategoryPUT = async (request, response) => {
           );
      } catch (error) {
           if (request.file) {
-               try {
-                    await Delete("category", request.file.filename);
-               } catch (error) {
-                    console.error(error);
-               }
+               await Delete("category", request.file.filename);
           }
 
-          console.error(error);
-
-          if (error.code === 11000) {
-               return response.status(409).json(
-                    {
-                         Status: false,
-                         Message: "Category already exists."
-                    }
-               );
-          }
-
-          return response.status(500).json(
-               {
-                    Status: false,
-                    Message: "Internal Server Error"
-               }
-          );
+          next(error);
      }
 }
 
-const CategoryPATCH = async (request, response) => {
+const CategoryPATCH = async (request, response, next) => {
      try {
           const ID = request.params.id;
           const { Status, Home, Featured } = request.body;
@@ -309,18 +256,11 @@ const CategoryPATCH = async (request, response) => {
                }
           );
      } catch (error) {
-          console.error(error);
-
-          return response.status(500).json(
-               {
-                    Status: false,
-                    Message: "Internal Server Error"
-               }
-          );
+          next(error);
      }
 }
 
-const CategoryDELETE = async (request, response) => {
+const CategoryDELETE = async (request, response, next) => {
      try {
           const ID = request.params.id;
 
@@ -347,14 +287,7 @@ const CategoryDELETE = async (request, response) => {
                }
           )
      } catch (error) {
-          console.error(error);
-
-          return response.status(500).json(
-               {
-                    Status: false,
-                    Message: "Internal Server Error"
-               }
-          )
+          next(error);
      }
 }
 

@@ -15,19 +15,23 @@ server.use('/', express.static(path.join(__dirname, 'public')));
 // Routes
 const { Category } = require('./Routes/Category.Routes');
 const { Color } = require('./Routes/Color.Routes');
+const { Brand } = require('./Routes/Brand.Routes');
 const { Error } = require('./Middleware/Error.Middleware');
 const { Database } = require('./Configuration/Database.Configuration');
 
 server.use('/api/category', Category);
 server.use('/api/color', Color);
-server.use((request, response, next) => {
-     response.status(404).json(
-          {
-               Status: false,
-               Message: `Route not found: ${request.originalUrl}`
-          }
-     );
-});
+server.use('/api/brand', Brand);
+server.use(
+     (request, response) => {
+          return response.status(404).json(
+               {
+                    Status: false,
+                    Message: `Route not found: ${request.originalUrl}`
+               }
+          );
+     }
+);
 server.use(Error);
 
 const Server = async () => {
