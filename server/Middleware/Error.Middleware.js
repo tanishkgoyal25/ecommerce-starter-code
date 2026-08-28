@@ -48,7 +48,16 @@ const Error = (error, request, response, next) => {
           );
      }
 
-     console.error(`Internal Server Error: ${error.message}`);
+     if (error.code === 11000) {
+          return response.status(409).json(
+               {
+                    Status: false,
+                    Message: `${Object.keys(error.keyValue)[0]} already exists.`
+               }
+          );
+     }
+
+     console.error('Internal Server Error:', error);
 
      return response.status(500).json(
           {
