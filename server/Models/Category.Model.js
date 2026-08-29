@@ -20,7 +20,7 @@ const Schema = new mongoose.Schema(
           },
           Status: {
                type: Boolean,
-               default: true
+               default: false
           },
           Home: {
                type: Boolean,
