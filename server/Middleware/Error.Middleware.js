@@ -37,6 +37,24 @@ const Error = (error, request, response, next) => {
           );
      }
 
+     if (error.name === 'TokenExpiredError') {
+          return response.status(401).json(
+               {
+                    Status: false,
+                    Message: "JWT Token expired."
+               }
+          )
+     }
+
+     if (error.name === 'JsonWebTokenError') {
+          return response.status(401).json(
+               {
+                    Status: false,
+                    Message: "Invalid JWT Token."
+               }
+          )
+     }
+
      if (error.name === 'ValidationError') {
           const Messages = Object.values(error.errors).map((event) => event.message);
 

@@ -4,10 +4,10 @@ const { BrandGET, BrandPOST, BrandPUT, BrandPATCH, BrandDELETE } = require('../C
 const { ValidID } = require('../Middleware/Validator.Middleware');
 const { Upload } = require('../Middleware/Upload.Middleware');
 
-Brand.get('/', ValidID(), BrandGET);
+Brand.get('/', ValidID, BrandGET);
 Brand.post('/', Upload('brand').single('Image'), BrandPOST);
-Brand.put('/:id', ValidID(), Upload('brand').single('Image'), BrandPUT);
-Brand.patch('/:id', ValidID(), BrandPATCH);
-Brand.delete('/:id', ValidID(), BrandDELETE);
+Brand.put('/:id', ValidID, Upload('brand').single('Image'), BrandPUT);
+Brand.patch('/:id', ValidID, BrandPATCH);
+Brand.delete('/:id', ValidID, BrandDELETE);
 
 module.exports = { Brand };
