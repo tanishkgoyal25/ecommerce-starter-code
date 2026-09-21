@@ -22,15 +22,13 @@ const BrandGET = async (request, response, next) => {
 
           const [Brands, Total] = await Promise.all([Brand.find(Filter).sort({ createdAt: -1 }).skip(Skip).limit(Limiter).lean(), Brand.countDocuments(Filter)]);
 
-          const Pages = Math.ceil(Total / Limiter);
-
           return response.status(200).json(
                {
                     Status: true,
                     Message: "Brands fetched successfully.",
                     Total,
                     Page: CurrentPage,
-                    Pages,
+                    Pages: Math.ceil(Total / Limiter),
                     Limit: Limiter,
                     Brands
                }
@@ -66,7 +64,7 @@ const BrandPOST = async (request, response, next) => {
                )
           }
 
-          await Brand.create(
+          const Data = await Brand.create(
                {
                     Name: Name.trim(),
                     Image: request.file.filename
@@ -76,7 +74,8 @@ const BrandPOST = async (request, response, next) => {
           return response.status(201).json(
                {
                     Status: true,
-                    Message: "Brand created successfully."
+                    Message: "Brand created successfully.",
+                    Data
                }
           )
      } catch (error) {
@@ -108,17 +107,28 @@ const BrandPUT = async (request, response, next) => {
                )
           }
 
-          const UpdatedData = {}
+          const Field = {}
 
           if (Name?.trim()) {
-               UpdatedData.Name = Name.trim();
+               Field.Name = Name.trim();
           }
 
           if (request.file) {
-               UpdatedData.Image = request.file.filename;
+               Field.Image = request.file.filename;
           }
 
-          const UpdatedBrand = await Brand.findByIdAndUpdate(ID, UpdatedData, { returnDocument: "after", runValidators: true });
+          if (Object.keys(Field).length === 0) {
+               if (request.file) await Delete("brand", request.file.filename);
+
+               return response.status(400).json(
+                    {
+                         Status: false,
+                         Message: "No fields provided to update."
+                    }
+               );
+          }
+
+          const UpdatedBrand = await Brand.findByIdAndUpdate(ID, Field, { returnDocument: "after", runValidators: true });
 
           if (request.file && Data.Image && Data.Image !== request.file.filename) {
                await Delete("brand", Data.Image);
@@ -145,18 +155,7 @@ const BrandPATCH = async (request, response, next) => {
           const ID = request.params.id;
           const { Status, Home, Featured } = request.body;
 
-          const Data = await Brand.findById(ID);
-
-          if (!Data) {
-               return response.status(404).json(
-                    {
-                         Status: false,
-                         Message: "Brand does not exist."
-                    }
-               )
-          }
-
-          const UpdatedData = {};
+          const Field = {};
 
           if (Status !== undefined) {
                if (typeof Status !== 'boolean') {
@@ -168,7 +167,7 @@ const BrandPATCH = async (request, response, next) => {
                     );
                }
 
-               UpdatedData.Status = Status;
+               Field.Status = Status;
           }
 
           if (Home !== undefined) {
@@ -181,7 +180,7 @@ const BrandPATCH = async (request, response, next) => {
                     );
                }
 
-               UpdatedData.Home = Home;
+               Field.Home = Home;
           }
 
           if (Featured !== undefined) {
@@ -194,10 +193,10 @@ const BrandPATCH = async (request, response, next) => {
                     );
                }
 
-               UpdatedData.Featured = Featured;
+               Field.Featured = Featured;
           }
 
-          if (Object.keys(UpdatedData).length === 0) {
+          if (Object.keys(Field).length === 0) {
                return response.status(400).json(
                     {
                          Status: false,
@@ -206,13 +205,22 @@ const BrandPATCH = async (request, response, next) => {
                );
           }
 
-          const UpdatedBrand = await Brand.findByIdAndUpdate(ID, UpdatedData, { returnDocument: "after", runValidators: true });
+          const Data = await Brand.findByIdAndUpdate(ID, Field, { returnDocument: "after", runValidators: true });
+
+          if (!Data) {
+               return response.status(404).json(
+                    {
+                         Status: false,
+                         Message: "Brand does not exist."
+                    }
+               )
+          }
 
           return response.status(200).json(
                {
                     Status: true,
                     Message: "Brand updated successfully.",
-                    Data: UpdatedBrand
+                    Data
                }
           );
      } catch (error) {

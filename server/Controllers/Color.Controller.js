@@ -19,15 +19,13 @@ const ColorGET = async (request, response, next) => {
 
           const [Colors, Total] = await Promise.all([Color.find(Filter).sort({ createdAt: -1 }).skip(Skip).limit(Limiter).lean(), Color.countDocuments(Filter)]);
 
-          const Pages = Math.ceil(Total / Limiter);
-
           return response.status(200).json(
                {
                     Status: true,
                     Message: "Colors fetched successfully using GET request.",
                     Total,
                     Page: CurrentPage,
-                    Pages,
+                    Pages: Math.ceil(Total / Limiter),
                     Limit: Limiter,
                     Colors
                }
@@ -59,7 +57,7 @@ const ColorPOST = async (request, response, next) => {
                )
           }
 
-          await Color.create(
+          const Data = await Color.create(
                {
                     Name: Name.trim(),
                     HEXCode: HEXCode.trim().toUpperCase()
@@ -69,7 +67,8 @@ const ColorPOST = async (request, response, next) => {
           return response.status(201).json(
                {
                     Status: true,
-                    Message: "Color created successfully."
+                    Message: "Color created successfully.",
+                    Data
                }
           )
      } catch (error) {
@@ -82,28 +81,13 @@ const ColorPUT = async (request, response, next) => {
           const ID = request.params.id;
           const { Name, HEXCode } = request.body;
 
-          const ExistingColor = await Color.findById(ID);
+          const Field = {};
 
-          if (!ExistingColor) {
-               return response.status(404).json(
-                    {
-                         Status: false,
-                         Message: "Color does not exist."
-                    }
-               )
-          }
+          if (Name?.trim()) Field.Name = Name.trim();
 
-          const Data = {};
+          if (HEXCode?.trim()) Field.HEXCode = HEXCode.trim().toUpperCase();
 
-          if (Name?.trim()) {
-               Data.Name = Name.trim();
-          }
-
-          if (HEXCode?.trim()) {
-               Data.HEXCode = HEXCode.trim().toUpperCase();
-          }
-
-          if (Object.keys(Data).length === 0) {
+          if (Object.keys(Field).length === 0) {
                return response.status(400).json(
                     {
                          Status: false,
@@ -112,9 +96,9 @@ const ColorPUT = async (request, response, next) => {
                );
           }
 
-          const UpdatedColor = await Color.findByIdAndUpdate(ID, Data, { returnDocument: "after", runValidators: true });
+          const Data = await Color.findByIdAndUpdate(ID, Field, { returnDocument: "after", runValidators: true });
 
-          if (!UpdatedColor) {
+          if (!Data) {
                return response.status(404).json(
                     {
                          Status: false,
@@ -127,7 +111,7 @@ const ColorPUT = async (request, response, next) => {
                {
                     Status: true,
                     Message: "Color updated successfully.",
-                    Data: UpdatedColor
+                    Data
                }
           )
      } catch (error) {
@@ -140,18 +124,7 @@ const ColorPATCH = async (request, response, next) => {
           const ID = request.params.id;
           const { Status } = request.body;
 
-          const ExistingColor = await Color.findById(ID);
-
-          if (!ExistingColor) {
-               return response.status(404).json(
-                    {
-                         Status: false,
-                         Message: "Color not found."
-                    }
-               );
-          }
-
-          const Data = {};
+          const Field = {};
 
           if (Status !== undefined) {
                if (typeof Status !== 'boolean') {
@@ -163,10 +136,10 @@ const ColorPATCH = async (request, response, next) => {
                     );
                }
 
-               Data.Status = Status;
+               Field.Status = Status;
           }
 
-          if (Object.keys(Data).length === 0) {
+          if (Object.keys(Field).length === 0) {
                return response.status(400).json(
                     {
                          Status: false,
@@ -175,13 +148,22 @@ const ColorPATCH = async (request, response, next) => {
                );
           }
 
-          const UpdatedColor = await Color.findByIdAndUpdate(ID, Data, { returnDocument: "after", runValidators: true });
+          const Data = await Color.findByIdAndUpdate(ID, Field, { returnDocument: "after", runValidators: true });
+
+          if (!Data) {
+               return response.status(404).json(
+                    {
+                         Status: false,
+                         Message: "Color does not exist.",
+                    }
+               )
+          }
 
           return response.status(200).json(
                {
                     Status: true,
                     Message: "Color updated successfully.",
-                    Data: UpdatedColor
+                    Data
                }
           );
      } catch (error) {
@@ -193,9 +175,9 @@ const ColorDELETE = async (request, response, next) => {
      try {
           const ID = request.params.id;
 
-          const ExistingColor = await Color.findByIdAndDelete(ID);
+          const Data = await Color.findByIdAndDelete(ID);
 
-          if (!ExistingColor) {
+          if (!Data) {
                return response.status(404).json(
                     {
                          Status: false,
@@ -208,7 +190,7 @@ const ColorDELETE = async (request, response, next) => {
                {
                     Status: true,
                     Message: "Color deleted successfully.",
-                    Data: ExistingColor
+                    Data
                }
           )
      } catch (error) {

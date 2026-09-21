@@ -22,15 +22,13 @@ const CategoryGET = async (request, response, next) => {
 
           const [Categories, Total] = await Promise.all([Category.find(Filter).sort({ createdAt: -1 }).skip(Skip).limit(Limiter).lean(), Category.countDocuments(Filter)])
 
-          const Pages = Math.ceil(Total / Limiter);
-
           return response.status(200).json(
                {
                     Status: true,
                     Message: "Categories fetched successfully using GET request.",
                     Total,
                     Page: CurrentPage,
-                    Pages,
+                    Pages: Math.ceil(Total / Limiter),
                     Limit: Limiter,
                     Categories
                }
@@ -79,7 +77,7 @@ const CategoryPOST = async (request, response, next) => {
                )
           }
 
-          await Category.create(
+          const Data = await Category.create(
                {
                     Name: Name.trim(),
                     Description: Description.trim(),
@@ -90,7 +88,8 @@ const CategoryPOST = async (request, response, next) => {
           return response.status(201).json(
                {
                     Status: true,
-                    Message: "Category created successfully."
+                    Message: "Category created successfully.",
+                    Data
                }
           );
      } catch (error) {
@@ -122,21 +121,21 @@ const CategoryPUT = async (request, response, next) => {
                )
           }
 
-          const UpdatedData = {}
+          const Field = {}
 
           if (Name?.trim()) {
-               UpdatedData.Name = Name.trim();
+               Field.Name = Name.trim();
           }
 
           if (Description?.trim()) {
-               UpdatedData.Description = Description.trim();
+               Field.Description = Description.trim();
           }
 
           if (request.file) {
-               UpdatedData.Image = request.file.filename;
+               Field.Image = request.file.filename;
           }
 
-          if (Object.keys(UpdatedData).length === 0) {
+          if (Object.keys(Field).length === 0) {
                if (request.file) {
                     await Delete("category", request.file.filename);
                }
@@ -149,9 +148,9 @@ const CategoryPUT = async (request, response, next) => {
                );
           }
 
-          const UpdatedCategory = await Category.findByIdAndUpdate(ID, UpdatedData, { returnDocument: "after", runValidators: true });
+          const Data = await Category.findByIdAndUpdate(ID, Field, { returnDocument: "after", runValidators: true });
 
-          if (!UpdatedCategory) {
+          if (!Data) {
                return response.status(404).json(
                     {
                          Status: false,
@@ -168,7 +167,7 @@ const CategoryPUT = async (request, response, next) => {
                {
                     Status: true,
                     Message: "Category updated successfully.",
-                    Data: UpdatedCategory
+                    Data
                }
           );
      } catch (error) {
@@ -185,18 +184,7 @@ const CategoryPATCH = async (request, response, next) => {
           const ID = request.params.id;
           const { Status, Home, Featured } = request.body;
 
-          const ExistingCategory = await Category.findById(ID);
-
-          if (!ExistingCategory) {
-               return response.status(404).json(
-                    {
-                         Status: false,
-                         Message: "Category not found."
-                    }
-               );
-          }
-
-          const UpdatedData = {};
+          const Field = {};
 
           if (Status !== undefined) {
                if (typeof Status !== 'boolean') {
@@ -208,7 +196,7 @@ const CategoryPATCH = async (request, response, next) => {
                     );
                }
 
-               UpdatedData.Status = Status;
+               Field.Status = Status;
           }
 
           if (Home !== undefined) {
@@ -221,7 +209,7 @@ const CategoryPATCH = async (request, response, next) => {
                     );
                }
 
-               UpdatedData.Home = Home;
+               Field.Home = Home;
           }
 
           if (Featured !== undefined) {
@@ -234,10 +222,10 @@ const CategoryPATCH = async (request, response, next) => {
                     );
                }
 
-               UpdatedData.Featured = Featured;
+               Field.Featured = Featured;
           }
 
-          if (Object.keys(UpdatedData).length === 0) {
+          if (Object.keys(Field).length === 0) {
                return response.status(400).json(
                     {
                          Status: false,
@@ -246,13 +234,22 @@ const CategoryPATCH = async (request, response, next) => {
                );
           }
 
-          const UpdatedCategory = await Category.findByIdAndUpdate(ID, UpdatedData, { returnDocument: "after", runValidators: true });
+          const Data = await Category.findByIdAndUpdate(ID, Field, { returnDocument: "after", runValidators: true });
+
+          if (!Data) {
+               return response.status(404).json(
+                    {
+                         Status: false,
+                         Message: "Category does not exist."
+                    }
+               )
+          }
 
           return response.status(200).json(
                {
                     Status: true,
                     Message: "Category updated successfully.",
-                    Data: UpdatedCategory
+                    Data
                }
           );
      } catch (error) {
@@ -264,9 +261,9 @@ const CategoryDELETE = async (request, response, next) => {
      try {
           const ID = request.params.id;
 
-          const ExistingCategory = await Category.findByIdAndDelete(ID);
+          const Data = await Category.findByIdAndDelete(ID);
 
-          if (!ExistingCategory) {
+          if (!Data) {
                return response.status(404).json(
                     {
                          Status: false,
@@ -275,15 +272,15 @@ const CategoryDELETE = async (request, response, next) => {
                )
           }
 
-          if (ExistingCategory.Image) {
-               await Delete("category", ExistingCategory.Image);
+          if (Data.Image) {
+               await Delete("category", Data.Image);
           }
 
           return response.status(200).json(
                {
                     Status: true,
                     Message: "Category deleted successfully.",
-                    Data: ExistingCategory
+                    Data
                }
           )
      } catch (error) {
