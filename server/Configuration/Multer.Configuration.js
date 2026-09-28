@@ -1,7 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const crypto = require('crypto')
+const crypto = require('crypto');
 
 const Storage = (Folder) => {
      const Destination = path.join(__dirname, "..", "public", Folder);

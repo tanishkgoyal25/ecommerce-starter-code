@@ -2,6 +2,8 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const morgan = require('morgan');
+const CookieParser = require('cookie-parser');
 const path = require('path');
 
 const server = express();
@@ -9,6 +11,8 @@ const server = express();
 // Middleware
 server.use(cors({ origin: process.env.Client, credentials: true }));
 server.use(express.json());
+server.use(morgan('dev'));
+server.use(CookieParser());
 server.use(express.urlencoded({ extended: true }));
 server.use('/', express.static(path.join(__dirname, 'public')));
 
@@ -16,12 +20,20 @@ server.use('/', express.static(path.join(__dirname, 'public')));
 const { Category } = require('./Routes/Category.Routes');
 const { Color } = require('./Routes/Color.Routes');
 const { Brand } = require('./Routes/Brand.Routes');
+const { Product } = require('./Routes/Product.Routes');
+const { Administrator } = require('./Routes/Administrator.Routes');
+const { User } = require('./Routes/User.Routes');
+const { Address } = require('./Routes/Address.Routes');
 const { Error } = require('./Middleware/Error.Middleware');
 const { Database } = require('./Configuration/Database.Configuration');
 
 server.use('/api/category', Category);
 server.use('/api/color', Color);
 server.use('/api/brand', Brand);
+server.use('/api/product', Product);
+server.use('/api/administrator', Administrator);
+server.use('/api/user', User);
+server.use('/api/address', Address);
 server.use(
      (request, response) => {
           return response.status(404).json(
