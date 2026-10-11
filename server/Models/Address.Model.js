@@ -5,12 +5,19 @@ const Schema = new mongoose.Schema(
           User: {
                type: mongoose.Schema.Types.ObjectId,
                ref: 'User',
-               required: true
+               required: true,
+               index: true
           },
           Name: {
                type: String,
                trim: true,
                required: true
+          },
+          Phone: {
+               type: String,
+               trim: true,
+               required: true,
+               maxlength: 25
           },
           AddressLine1: {
                type: String,
@@ -44,10 +51,11 @@ const Schema = new mongoose.Schema(
           Default: {
                type: Boolean,
                default: false,
+               index: false
           },
           Status: {
                type: Boolean,
-               default: false
+               default: true
           }
      },
      {

@@ -11,7 +11,11 @@ const AddressGET = async (request, response, next) => {
 
           if (ID) Filter._id = ID;
 
-          if (User) Filter.User = User;
+          if (request.user.Role !== 'Administrator') {
+               Filter.User = request.user._id;
+          } else if (User) {
+               Filter.User = User;
+          }
 
           if (Name) Filter.Name = Name;
 
@@ -27,11 +31,11 @@ const AddressGET = async (request, response, next) => {
 
           if (PostalIndexNumber) Filter.PostalIndexNumber = PostalIndexNumber;
 
-          if (Default !== undefined) Filter.Default = Default;
+          if (Default !== undefined) Filter.Default = Default === 'true';
 
-          if (Status !== undefined) Filter.Status = Status;
+          if (Status !== undefined) Filter.Status = Status === 'true';
 
-          const [Addresses, Total] = await Promise.all([Address.find(Filter).sort({ createdAt: -1 }).skip(Skip).limit(Limiter).lean(), Address.countDocuments(Filter)]);
+          const [Addresses, Total] = await Promise.all([Address.find(Filter).sort({ Default: -1, createdAt: -1 }).skip(Skip).limit(Limiter).lean(), Address.countDocuments(Filter)]);
 
           return response.status(200).json(
                {
@@ -51,22 +55,22 @@ const AddressGET = async (request, response, next) => {
 
 const AddressPOST = async (request, response, next) => {
      try {
-          const { User, Name, AddressLine1, AddressLine2, City, State, Country, PostalIndexNumber, Default, Status } = request.body;
-
-          if (!User?.trim()) {
-               return response.status(400).json(
-                    {
-                         Status: false,
-                         Message: "User is required."
-                    }
-               )
-          }
+          const { Name, Phone, AddressLine1, AddressLine2, City, State, Country, PostalIndexNumber, Default, Status } = request.body;
 
           if (!Name?.trim()) {
                return response.status(400).json(
                     {
                          Status: false,
                          Message: "Name is required."
+                    }
+               )
+          }
+
+          if (!Phone?.trim()) {
+               return response.status(400).json(
+                    {
+                         Status: false,
+                         Message: "Phone is required."
                     }
                )
           }
@@ -116,12 +120,20 @@ const AddressPOST = async (request, response, next) => {
                )
           }
 
+          const Total = await Address.countDocuments({ User: request.user._id });
+
+          if (Total === 0) Default = true;
+
+          if (Default === true) {
+               await Address.updateMany({ User: request.user._id }, { $set: { Default: false } });
+          }
+
           const Data = await Address.create(
                {
                     User: request.user._id,
                     Name: Name.trim(),
                     AddressLine1: AddressLine1.trim(),
-                    AddressLine2: AddressLine2.trim(),
+                    AddressLine2: AddressLine2?.trim(),
                     City: City.trim(),
                     State: State.trim(),
                     Country: Country.trim(),
@@ -146,17 +158,17 @@ const AddressPOST = async (request, response, next) => {
 const AddressPUT = async (request, response, next) => {
      try {
           const ID = request.params.id;
-          const { User, Name, AddressLine1, AddressLine2, City, State, Country, PostalIndexNumber, Default, Status } = request.body;
+          const { Name, Phone, AddressLine1, AddressLine2, City, State, Country, PostalIndexNumber, Default, Status } = request.body;
 
           const Field = {};
 
-          if (User?.trim()) Field.User = User.trim();
-
           if (Name?.trim()) Field.Name = Name.trim();
+
+          if (Phone?.trim()) Field.Phone = Phone.trim();
 
           if (AddressLine1?.trim()) Field.AddressLine1 = AddressLine1.trim();
 
-          if (AddressLine2?.trim()) Field.AddressLine2 = AddressLine2.trim();
+          if (AddressLine2 !== undefined) Field.AddressLine2 = AddressLine2.trim();
 
           if (City?.trim()) Field.City = City.trim();
 
@@ -167,19 +179,25 @@ const AddressPUT = async (request, response, next) => {
           if (PostalIndexNumber?.trim()) Field.PostalIndexNumber = PostalIndexNumber.trim();
 
           if (Default !== undefined) Field.Default = Default;
-          
+
           if (Status !== undefined) Field.Status = Status;
 
           if (Object.keys(Field).length === 0) {
                return response.status(400).json(
                     {
                          Status: false,
-                         Message: "No field were provided for update."
+                         Message: "No fields were provided for update."
                     }
                )
           }
 
-          const Data = await Address.findByIdAndUpdate(ID, Field, { returnDocument: 'after', runValidators: true });
+          const Query = { _id: ID };
+
+          if (request.user.Role !== 'Administrator') {
+               Query.User = request.user._id;
+          }
+
+          const Data = await Address.findOneAndUpdate(Query, Field, { returnDocument: 'after', runValidators: true });
 
           if (!Data) {
                return response.status(404).json(
@@ -190,10 +208,15 @@ const AddressPUT = async (request, response, next) => {
                )
           }
 
+          if (Field.Default === true) {
+               await Address.updateMany({ User: Data.User, _id: { $ne: Data._id } }, { $set: { Default: false } });
+          }
+
           return response.status(200).json(
                {
                     Status: true,
-                    Message: "Address updated."
+                    Message: "Address updated.",
+                    Data
                }
           )
      } catch (error) {
@@ -243,7 +266,13 @@ const AddressPATCH = async (request, response, next) => {
                );
           }
 
-          const Data = await Address.findByIdAndUpdate(ID, Field, { returnDocument: 'after', runValidators: true });
+          const Query = { _id: ID };
+
+          if (request.user.Role !== 'Administrator') {
+               Query.User = request.user._id;
+          }
+
+          const Data = await Address.findOneAndUpdate(Query, Field, { returnDocument: 'after', runValidators: true });
 
           if (!Data) {
                return response.status(404).json(
@@ -252,6 +281,10 @@ const AddressPATCH = async (request, response, next) => {
                          Message: "Address does not exist."
                     }
                )
+          }
+
+          if (Default === true) {
+               await Address.updateMany({ User: Data.User, _id: { $ne: Data._id } }, { $set: { Default: false } });
           }
 
           return response.status(200).json(
@@ -270,7 +303,13 @@ const AddressDELETE = async (request, response, next) => {
      try {
           const ID = request.params.id;
 
-          const Data = await Address.findByIdAndDelete(ID);
+          const Query = { _id: ID };
+
+          if (request.user.Role !== 'Administrator') {
+               Query.User = request.user._id;
+          }
+
+          const Data = await Address.findOneAndDelete(Query);
 
           if (!Data) {
                return response.status(404).json(
@@ -279,6 +318,10 @@ const AddressDELETE = async (request, response, next) => {
                          Message: "Address does not exist."
                     }
                )
+          }
+
+          if (Data.Default) {
+               await Address.findOneAndUpdate({ User: Data.User, Status: true }, { $set: { Default: true } }, { sort: { createdAt: -1 } });
           }
 
           return response.status(200).json(
