@@ -8,8 +8,8 @@ const { Authorization } = require('../Middleware/Authorization.Middleware');
 
 Product.get('/', ValidID, ProductGET);
 Product.post('/', Authentication, Authorization('Administrator'), Upload('product').array('Image', 5), ProductPOST);
-Product.put('/:id', ValidID, Authentication, Authorization('Administrator'), Upload('product').array('Image', 5), ProductPUT);
-Product.patch('/:id', ValidID, Authentication, Authorization('Administrator'), ProductPATCH);
-Product.delete('/:id', ValidID, Authentication, Authorization('Administrator'), ProductDELETE);
+Product.put('/:id', Authentication, Authorization('Administrator'), ValidID, Upload('product').array('Image', 5), ProductPUT);
+Product.patch('/:id', Authentication, Authorization('Administrator'), ValidID, ProductPATCH);
+Product.delete('/:id', Authentication, Authorization('Administrator'), ValidID, ProductDELETE);
 
 module.exports = { Product };

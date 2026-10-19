@@ -5,8 +5,8 @@ const { ValidID } = require('../Middleware/Validator.Middleware');
 const { Authentication } = require('../Middleware/Authentication.Middleware');
 const { Authorization } = require('../Middleware/Authorization.Middleware');
 
-Administrator.get('/profile', Authentication, Profile);
-Administrator.post('/register', Register);
+Administrator.get('/profile', Authentication, Authorization('Administrator'), Profile);
+Administrator.post('/register', Authentication, Authorization('Administrator'), Register);
 Administrator.post('/login', Login);
 Administrator.get('/refresh', Refresh);
 Administrator.post('/logout', Logout);
