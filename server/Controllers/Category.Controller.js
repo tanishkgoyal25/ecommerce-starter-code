@@ -3,7 +3,7 @@ const { Delete } = require("../Services/File.Service");
 
 const CategoryGET = async (request, response, next) => {
      try {
-          const { Page, Limit, ID, Name, Status, Home, Featured } = request.query;
+          const { ID, Name, Status, Home, Featured, Page, Limit } = request.query;
 
           const Filter = {};
           const Limiter = Math.min(Math.max(Number(Limit) || 10, 1), 25);
