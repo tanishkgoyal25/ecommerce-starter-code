@@ -1,8 +1,9 @@
+const mongoose = require('mongoose');
 const { Address } = require('../Models/Address.Model');
 
 const AddressGET = async (request, response, next) => {
      try {
-          const { ID, User, Name, AddressLine1, AddressLine2, City, State, Country, PostalIndexNumber, Default, Status, Page, Limit } = request.query;
+          const { ID, Phone, User, Name, AddressLine1, AddressLine2, City, State, Country, PostalIndexNumber, Default, Status, Page, Limit } = request.query;
 
           const Filter = {};
           const Limiter = Math.min(Math.max(Number(Limit) || 10, 1), 25);
@@ -14,10 +15,21 @@ const AddressGET = async (request, response, next) => {
           if (request.user.Role !== 'Administrator') {
                Filter.User = request.user._id;
           } else if (User) {
+               if (!mongoose.Types.ObjectId.isValid(User)) {
+                    return response.status(400).json(
+                         {
+                              Status: false,
+                              Message: "Invalid MongoDB ID."
+                         }
+                    );
+               }
+
                Filter.User = User;
           }
 
           if (Name) Filter.Name = Name;
+
+          if (Phone) Filter.Phone = Phone;
 
           if (AddressLine1) Filter.AddressLine1 = AddressLine1;
 
@@ -84,6 +96,15 @@ const AddressPOST = async (request, response, next) => {
                )
           }
 
+          if (AddressLine2 !== undefined && AddressLine2 !== null && typeof AddressLine2 !== 'string') {
+               return response.status(400).json(
+                    {
+                         Status: false,
+                         Message: "Address Line 2 must be a string."
+                    }
+               )
+          }
+
           if (!City?.trim()) {
                return response.status(400).json(
                     {
@@ -120,28 +141,51 @@ const AddressPOST = async (request, response, next) => {
                )
           }
 
+          if (Status !== undefined) {
+               if (typeof Status !== 'boolean') {
+                    return response.status(400).json(
+                         {
+                              Status: false,
+                              Message: "Status must be a boolean."
+                         }
+                    );
+               }
+          }
+
+          if (Default !== undefined) {
+               if (typeof Default !== 'boolean') {
+                    return response.status(400).json(
+                         {
+                              Status: false,
+                              Message: "Default must be a boolean."
+                         }
+                    );
+               }
+          }
+
           const Total = await Address.countDocuments({ User: request.user._id });
 
-          if (Total === 0) Default = true;
-
-          if (Default === true) {
-               await Address.updateMany({ User: request.user._id }, { $set: { Default: false } });
-          }
+          const Primary = Total === 0 ? true : Boolean(Default);
 
           const Data = await Address.create(
                {
                     User: request.user._id,
                     Name: Name.trim(),
+                    Phone: Phone.trim(),
                     AddressLine1: AddressLine1.trim(),
-                    AddressLine2: AddressLine2?.trim(),
+                    AddressLine2: AddressLine2,
                     City: City.trim(),
                     State: State.trim(),
                     Country: Country.trim(),
                     PostalIndexNumber: PostalIndexNumber.trim(),
-                    Default,
+                    Default: Primary,
                     Status
                }
           )
+
+          if (Primary) {
+               await Address.updateMany({ User: request.user._id, _id: { $ne: Data._id } }, { $set: { Default: false } });
+          }
 
           return response.status(201).json(
                {
@@ -168,6 +212,15 @@ const AddressPUT = async (request, response, next) => {
 
           if (AddressLine1?.trim()) Field.AddressLine1 = AddressLine1.trim();
 
+          if (AddressLine2 !== undefined && typeof AddressLine2 !== 'string') {
+               return response.status(400).json(
+                    {
+                         Status: false,
+                         Message: "Address Line 2 must be a string."
+                    }
+               );
+          }
+
           if (AddressLine2 !== undefined) Field.AddressLine2 = AddressLine2.trim();
 
           if (City?.trim()) Field.City = City.trim();
@@ -178,9 +231,31 @@ const AddressPUT = async (request, response, next) => {
 
           if (PostalIndexNumber?.trim()) Field.PostalIndexNumber = PostalIndexNumber.trim();
 
-          if (Default !== undefined) Field.Default = Default;
+          if (Default !== undefined) {
+               if (typeof Default !== 'boolean') {
+                    return response.status(400).json(
+                         {
+                              Status: false,
+                              Message: "Default must be a boolean."
+                         }
+                    );
+               }
 
-          if (Status !== undefined) Field.Status = Status;
+               Field.Default = Default;
+          }
+
+          if (Status !== undefined) {
+               if (typeof Status !== 'boolean') {
+                    return response.status(400).json(
+                         {
+                              Status: false,
+                              Message: "Status must be a boolean."
+                         }
+                    );
+               }
+
+               Field.Status = Status;
+          }
 
           if (Object.keys(Field).length === 0) {
                return response.status(400).json(

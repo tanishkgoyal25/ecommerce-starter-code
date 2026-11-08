@@ -143,7 +143,7 @@ const ProductPOST = async (request, response, next) => {
 const ProductPUT = async (request, response, next) => {
      try {
           const ID = request.params.id;
-          const { Name, Description, Price, Stock, Category, Brand, Color, Status, Home, Featured } = request.body;
+          const { Name, Description, Price, Stock, Category, Brand, Color, Status, Home, Featured, Images } = request.body;
 
           const ExistingProduct = await Product.findById(ID);
 
@@ -168,7 +168,49 @@ const ProductPUT = async (request, response, next) => {
 
           if (Description?.trim()) Field.Description = Description.trim();
 
-          if (request.files?.length > 0) Field.Image = request.files.map(file => file.filename);
+          let ExistingImages = [];
+
+          if (Array.isArray(Images)) {
+               ExistingImages = Images.filter(Image => ExistingProduct.Image.includes(Image));
+          } else {
+               ExistingImages = ExistingProduct.Image ? [...ExistingProduct.Image] : [];
+          }
+
+          const NewImages = [];
+          if (request.files?.length > 0) {
+               for (const file of request.files) {
+                    NewImages.push(file.filename);
+               }
+          }
+
+          const FinalImages = [...ExistingImages, ...NewImages];
+
+          if (FinalImages.length === 0) {
+               if (request.files?.length > 0) {
+                    for (const file of request.files) {
+                         await Delete("product", file.filename);
+                    }
+               }
+
+               return response.status(400).json(
+                    {
+                         Status: false,
+                         Message: "Product must have at least one image."
+                    }
+               );
+          }
+
+          if (request.files?.length > 0 || Array.isArray(Images)) {
+               Field.Image = FinalImages;
+          }
+
+          if (ExistingProduct.Image) {
+               for (const oldImage of ExistingProduct.Image) {
+                    if (!FinalImages.includes(oldImage)) {
+                         await Delete('product', oldImage);
+                    }
+               }
+          }
 
           if (Price !== undefined) Field.Price = Price;
 
@@ -201,21 +243,22 @@ const ProductPUT = async (request, response, next) => {
                );
           }
 
-          const UpdatedProduct = await Product.findByIdAndUpdate(ID, Field, { returnDocument: "after", runValidators: true });
+          const Data = await Product.findByIdAndUpdate(ID, Field, { returnDocument: "after", runValidators: true });
 
-          if (request.files && request.files.length > 0 && ExistingProduct.Image) {
-               for (const oldImage of ExistingProduct.Image) {
-                    if (!Field.Image.includes(oldImage)) {
-                         await Delete('product', oldImage);
+          if (!Data) {
+               return response.status(404).json(
+                    {
+                         Status: false,
+                         Message: "Product does not exist."
                     }
-               }
+               )
           }
 
           return response.status(200).json(
                {
                     Status: true,
                     Message: "Product updated",
-                    Data: UpdatedProduct
+                    Data
                }
           )
      } catch (error) {
