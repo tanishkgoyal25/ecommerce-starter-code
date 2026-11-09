@@ -24,6 +24,7 @@ const { Product } = require('./Routes/Product.Routes');
 const { Administrator } = require('./Routes/Administrator.Routes');
 const { User } = require('./Routes/User.Routes');
 const { Address } = require('./Routes/Address.Routes');
+const { Wishlist } = require('./Routes/Wishlist.Routes');
 const { Error } = require('./Middleware/Error.Middleware');
 const { Database } = require('./Configuration/Database.Configuration');
 
@@ -34,6 +35,7 @@ server.use('/api/product', Product);
 server.use('/api/administrator', Administrator);
 server.use('/api/user', User);
 server.use('/api/address', Address);
+server.use('/api/wishlist', Wishlist);
 server.use(
      (request, response) => {
           return response.status(404).json(
